@@ -63,9 +63,9 @@ void setup()
   bleKeyboard.begin();
 
   kpdNum.setDebounceTime(30);
-  kpdNum.setHoldTime(100000);
+  kpdNum.setHoldTime(500);
   kpdLock.setDebounceTime(30);
-  kpdLock.setHoldTime(100000);
+  kpdLock.setHoldTime(500);
 
   kpd = &kpdNum;
 
@@ -97,13 +97,31 @@ void loop()
   {
     for (int i = 0; i < LIST_MAX; i++)
     {
-      if (kpd->key[i].stateChanged)
+      Key k = kpd->key[i];
+
+      if (k.stateChanged)
       {
-        switch (kpd->key[i].kstate)
+        uint8_t bleKey = (uint8_t)k.kchar;
+
+        switch (k.kstate)
         {
-          case PRESSED:
+          case KeyState::PRESSED:
           {
-            bleKeyboard.write((uint8_t)kpd->key[i].kchar);
+            bleKeyboard.write(bleKey);
+            break;
+          }
+          case KeyState::HOLD:
+          {
+            bleKeyboard.press(bleKey);
+            break;
+          }
+          case KeyState::RELEASED:
+          {
+            bleKeyboard.release(bleKey);
+            break;
+          }
+          case KeyState::IDLE:
+          {
             break;
           }
         }
