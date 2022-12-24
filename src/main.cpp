@@ -22,18 +22,18 @@ const byte COLS = 5;
 
 char numKeys[ROWS][COLS] =
     {
-        {KEY_F21, KEY_NUM_7, KEY_NUM_4, KEY_NUM_1, KEY_NUM_0},
-        {KEY_F22, KEY_NUM_SLASH, KEY_NUM_8, KEY_NUM_5, KEY_NUM_2},
+        {'1', KEY_NUM_7, KEY_NUM_4, KEY_NUM_1, KEY_NUM_0},
+        {'2', KEY_NUM_SLASH, KEY_NUM_8, KEY_NUM_5, KEY_NUM_2},
         {KEY_NUM_9, KEY_NUM_6, KEY_NUM_3, KEY_NUM_PERIOD, KEY_NUM_ENTER},
-        {KEY_NUM_ASTERISK, KEY_F23, KEY_F24, KEY_NUM_MINUS, KEY_NUM_PLUS}
+        {KEY_NUM_ASTERISK, '3', '4', KEY_NUM_MINUS, KEY_NUM_PLUS}
     };
 
 char lockedKeys[ROWS][COLS] =
     {
-        {KEY_F21, KEY_HOME, KEY_LEFT_ARROW, KEY_END, KEY_INSERT},
-        {KEY_F22, KEY_NUM_SLASH, KEY_UP_ARROW, KEY_NUM_5, KEY_DOWN_ARROW},
+        {'1', KEY_HOME, KEY_LEFT_ARROW, KEY_END, KEY_INSERT},
+        {'2', KEY_NUM_SLASH, KEY_UP_ARROW, KEY_NUM_5, KEY_DOWN_ARROW},
         {KEY_PAGE_UP, KEY_RIGHT_ARROW, KEY_PAGE_DOWN, KEY_DELETE, KEY_NUM_ENTER},
-        {KEY_NUM_ASTERISK, KEY_F23, KEY_F24, KEY_NUM_MINUS, KEY_NUM_PLUS}
+        {KEY_NUM_ASTERISK, '3', '4', KEY_NUM_MINUS, KEY_NUM_PLUS}
     };
 
 byte rowPins[ROWS] = {ROW_1_PIN, ROW_2_PIN, ROW_3_PIN, ROW_4_PIN};
@@ -53,6 +53,47 @@ bool numlocked = false;
 void modeChanged(Button2& btn)
 {
   numlocked = !numlocked;
+}
+
+void proceesFunctionKeyState(Key k)
+{
+  if (k.kstate == KeyState::PRESSED)
+  {
+    bleKeyboard.press(KEY_LEFT_CTRL);
+    bleKeyboard.press(KEY_LEFT_ALT);
+    bleKeyboard.press((uint8_t)k.kchar);
+    bleKeyboard.release(KEY_LEFT_CTRL);
+    bleKeyboard.release(KEY_LEFT_ALT);
+    bleKeyboard.release((uint8_t)k.kchar);
+  }
+}
+
+void processKeyKeystate(Key k)
+{
+  uint8_t bleKey = (uint8_t)k.kchar;
+
+  switch (k.kstate)
+  {
+    case KeyState::PRESSED:
+    {
+        bleKeyboard.write(bleKey);
+        break;
+    }
+    case KeyState::HOLD:
+    {
+        bleKeyboard.press(bleKey);
+        break;
+    }
+    case KeyState::RELEASED:
+    {
+        bleKeyboard.release(bleKey);
+        break;
+    }
+    case KeyState::IDLE:
+    {
+        break;
+    }
+  }
 }
 
 void setup()
@@ -101,30 +142,16 @@ void loop()
 
       if (k.stateChanged)
       {
-        uint8_t bleKey = (uint8_t)k.kchar;
+        if (k.kchar == '1' ||
+            k.kchar == '2' ||
+            k.kchar == '3' ||
+            k.kchar == '4')
+            {
+              proceesFunctionKeyState(k);
+              break;
+            }
 
-        switch (k.kstate)
-        {
-          case KeyState::PRESSED:
-          {
-            bleKeyboard.write(bleKey);
-            break;
-          }
-          case KeyState::HOLD:
-          {
-            bleKeyboard.press(bleKey);
-            break;
-          }
-          case KeyState::RELEASED:
-          {
-            bleKeyboard.release(bleKey);
-            break;
-          }
-          case KeyState::IDLE:
-          {
-            break;
-          }
-        }
+        processKeyKeystate(k);
       }
     }
   }
